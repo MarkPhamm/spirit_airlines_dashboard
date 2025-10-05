@@ -28,41 +28,180 @@ Analyzed **4,510 Spirit Airlines reviews (2015–2025)** using SQL + Python + Mo
   - **Airports:** Some origins/destinations (e.g., **MIA**, **MEX**) repeatedly appear among the lowest-rated.
 
 ---
+## 2. Architecture Overview
 
-## 2. Data Processing and Analysis Workflow
+![BritishAirways](https://github.com/user-attachments/assets/2a9d45e6-be1b-4582-a9a0-3b7fb7536d9f)
 
-### 2.1. Data
+### 2.1 Extraction Layer
+
+#### Overview
+
+The extraction layer gathers review data for *all* airlines from Skytrax, stores it in S3 and prepares it for downstream processing.
+
+* **Repository:** [all\_airlines\_extract\_load](https://github.com/vietlam2002/all_airlines_extract_load)
+
+#### 2.1.1 Technology Stack
+
+* Python 3.12 with Pandas
+* Apache Airflow
+* AWS S3
+* Docker
+* Snowflake
+
+#### 2.1.2 Data Source
+
+Skytrax review pages, e.g.
+`https://www.airlinequality.com/airline-reviews/{airline‑slug}/`
+
+Captured fields include: star ratings, review text, flight details, passenger metadata, and category scores.
+
+#### 2.1.3 Extraction Process
+
+```python
+# From main_dag.py – Extract task definition
+scrape_skytrax_data = BashOperator(
+    task_id="scrape_skytrax_data",
+    bash_command="chmod -R 777 /opt/***/data && python /opt/airflow/tasks/scraper_extract/scraper.py"
+)
+```
+
+Steps
+
+1. Iterate through the Skytrax airline index.
+2. Request paginated review HTML for each carrier.
+3. Parse and normalise each review record.
+4. Persist results to `raw_data.csv`.
+
+#### 2.1.4 Data Cleaning & Initial Transformation
+
+```python
+clean_data = BashOperator(
+    task_id="clean_data",
+    bash_command="python /opt/airflow/tasks/transform/transform.py"
+)
+```
+
+Cleaning tasks standardise date formats, handle nulls, and enforce data‑type consistency before staging to S3.
+
+#### 2.1.5 AWS S3 Integration
+
+```python
+upload_cleaned_data_to_s3 = BashOperator(
+    task_id="upload_cleaned_data_to_s3",
+    bash_command="chmod -R 777 /opt/airflow/data && python /opt/airflow/tasks/upload_to_s3.py"
+)
+```
+
+* Secure IAM roles
+* Server‑side encryption
+* Versioning enabled
+
+#### 2.1.6 Workflow Orchestration
+
+```python
+with DAG(
+    dag_id="skytrax_pipeline",
+    schedule_interval="@daily",
+    default_args=default_args,
+    start_date=start_date,
+    catchup=True,
+    max_active_runs=1,
+):
+    scrape_skytrax_data >> note >> clean_data >> note_clean_data >> upload_cleaned_data_to_s3
+```
+
+#### 2.1.7 Snowflake Integration
+
+```python
+snowflake_copy_operator = BashOperator(
+    task_id="snowflake_copy_from_s3",
+    bash_command="pip install snowflake-connector-python python-dotenv && python /opt/airflow/tasks/snowflake_load.py"
+)
+```
+
+---
+
+### 2.2 Data Cleaning Layer
+
+* **Repository:** [all\_airlines\_data\_cleaning](https://github.com/DucLe-2005/all_airlines_data_cleaning)
+* **Stack:** Python 3.12.5, Pandas, NumPy, Matplotlib, Seaborn
+
+Key steps mirror the British Airways version but operate across carriers:
+
+1. **Column Standardisation** – snake\_case, special‑character cleanup.
+2. **Date Formatting** – ISO 8601 for both submission and flight dates.
+3. **Text Cleaning** – verification flag extraction; nationality normalisation.
+4. **Route Parsing** – origin, destination, and connections.
+5. **Aircraft Standardisation** – unified Airbus/Boeing nomenclature.
+6. **Rating Conversion** – numeric Int64 fields for uniform analysis.
+
+Outputs feed directly to Snowflake for transformation.
+
+---
+
+### 2.3 Transformation Layer
+
+* **Repository:** [all\_airlines\_transformation](https://github.com/MarkPhamm/all_airlines_transformation)
+* **Stack:** dbt (Core), Snowflake, Airflow (Astronomer), GitHub Actions
+
+#### 2.3.1 Data Model
+
+A star schema identical in design to the airline‑specific version:
+
+| Table             | Purpose                                                 |
+| ----------------- | ------------------------------------------------------- |
+| **fct\_review**   | One row per review per flight with quantitative metrics |
+| **dim\_customer** | Passenger information                                   |
+| **dim\_aircraft** | Aircraft attributes                                     |
+| **dim\_location** | Airport / city keys for origin, destination, transit    |
+| **dim\_date**     | Calendar table for submission & flight dates            |
+
+Incremental dbt jobs maintain freshness while minimising warehouse spend.
+
+#### 2.3.2 Data Quality Framework
+
+* Schema & relationship tests
+* Custom business‑logic assertions (e.g. rating within 0–10)
+* Freshness & completeness checks
+
+CI/CD triggers on code pushes, PRs, weekly schedules, and manual invocations.
+
+---
+
+## 3. Data Processing and Analysis Workflow
+
+### 3.1. Data
 - Load Spirit-filtered Skytrax reviews (CSV) into SQL/Python.
 - Validate schema (types, nulls, ranges) and align service-score scales (1–5).
 
-### 2.2. Cleaning
+### 3.2. Cleaning
 - Normalize categorical values (aircraft labels, seat & traveller types).
 - Standardize airport/location identifiers and remove impossible values.
 - Drop/review rows with missing core metrics (`AVERAGE_RATING`, service scores) when required by a given chart.
 
-### 2.3. Feature Preparation
+### 3.3. Feature Preparation
 - Flags: `RECOMMENDED` (True/False), rating bands (`bad <2`, `medium <4`, `good ≥4`).
 - Groupings: **Seat Type** (Economy, Premium Economy, Business, First), **Traveller Type** (Solo/Family/Couple Leisure, Business).
 - Route context: origin/destination/transit IDs (for airport charts).
 
-### 2.4. Modeling/Analysis
+### 3.4. Modeling/Analysis
 - Descriptives and share-of-total summaries for KPIs and segments.
 - **Correlation analysis** between service scores and overall rating (Python) for diagnostic context.
 
-### 2.5. Validation
+### 3.5. Validation
 - Spot-check outliers (e.g., aircraft models with N=1) and annotate where insights are not generalizable.
 - Compare dashboard aggregates with Python cross-tabs to ensure parity.
 
-### 2.6. Visualization
+### 3.6. Visualization
 - **Mode Studio** for most charts (time trends, segments, airports, aircraft).
 - **Python** only for the **Correlation Heatmap**.
 - Filters in the dashboard: year, seat type, traveller type, route.
 
 ---
 
-## 3. Insights (with Dashboard Figures)
+## 4. Insights (with Dashboard Figures)
 
-### 3.1. Overall Customer Satisfaction
+### 4.1. Overall Customer Satisfaction
 
 - **Total Reviews:** **4,510**  
 - **Average Rating:** **1.59**  
@@ -74,7 +213,7 @@ Analyzed **4,510 Spirit Airlines reviews (2015–2025)** using SQL + Python + Mo
 
 ---
 
-### 3.2. Satisfaction Trends Through Time
+### 4.2. Satisfaction Trends Through Time
 <p align="center">
   <img width="900" alt="Average Rating vs Review Count" src="images/year_overall.png" />
   <br/>
@@ -87,7 +226,7 @@ Analyzed **4,510 Spirit Airlines reviews (2015–2025)** using SQL + Python + Mo
 
 ---
 
-### 3.3. Satisfaction by Customer Type — Seat Type
+### 4.3. Satisfaction by Customer Type — Seat Type
 <p align="center">
   <img width="900" alt="Satisfaction by Seat Type" src="images/seat_type.png" />
 </p>
@@ -99,7 +238,7 @@ Analyzed **4,510 Spirit Airlines reviews (2015–2025)** using SQL + Python + Mo
 
 ---
 
-### 3.4. Satisfaction by Customer Type — Traveller Type
+### 4.4. Satisfaction by Customer Type — Traveller Type
 <p align="center">
   <img width="900" alt="Satisfaction by Traveller Type" src="images/traveller_type.png" />
 </p>
@@ -111,7 +250,7 @@ Analyzed **4,510 Spirit Airlines reviews (2015–2025)** using SQL + Python + Mo
 
 ---
 
-### 3.5. Satisfaction by Aircraft and Airports
+### 4.5. Satisfaction by Aircraft and Airports
 <p align="center">
   <img width="900" alt="Average Rating by Aircraft + Review Count" src="images/aircraft.png" />
 </p>
@@ -131,7 +270,7 @@ Analyzed **4,510 Spirit Airlines reviews (2015–2025)** using SQL + Python + Mo
 
 ---
 
-### 3.6. Correlation Heatmap (from EDA)
+### 4.6. Correlation Heatmap (from EDA)
 <p align="center">
   <img width="900" alt="Correlation Heatmap (Numeric Features)" src="images/correlation_heatmap.png" />
 </p>
@@ -141,43 +280,43 @@ Analyzed **4,510 Spirit Airlines reviews (2015–2025)** using SQL + Python + Mo
 
 ---
 
-## 4. Recommendations
+## 5. Recommendations
 
-### 4.1. Core Service Fixes
+### 5.1. Core Service Fixes
 - **Wi-Fi & Connectivity:** prioritize reliability and coverage; renegotiate provider SLAs; roll out hardware upgrades by fleet/route.
 - **Inflight Entertainment:** baseline offering on longer routes (streaming portal or curated content) to lift scores from ~1.1.
 
-### 4.2. People & Comfort
+### 5.2. People & Comfort
 - **Cabin Staff:** targeted training on service recovery & empathy; reinforce consistency across crews.
 - **Seat Comfort:** quick wins (cushioning, cleanliness, broken seat remediation) and longer-term layout improvements on high-complaint routes.
 
-### 4.3. Segment Plays
+### 5.3. Segment Plays
 - **Business Class:** rebuild value proposition (priority services, reliable Wi-Fi, work surfaces, beverage/food upgrades); set SLA targets per pain point.
 - **Economy (97% of volume):** focus on the basics—cleanliness, predictability, on-board comms—to lift mass sentiment.
 
-### 4.4. Network & Ops
+### 5.4. Network & Ops
 - **Airport partnerships:** engage with **MIA/MEX/GOT** on joint fixes (check-in, boarding, signage); replicate best practices from **PHL/IAH**.
 - **Feedback loop:** increase post-flight outreach to boost recent reviews and monitor change impact.
 
 ---
 
-## 5. Key Learnings
+## 6. Key Learnings
 
-### 5.1. Technical
+### 6.1. Technical
 - Built an **end-to-end pipeline** (SQL → Python checks → Mode Studio).
 - Constructed an **interactive dashboard** with year/segment filters.
 - Produced a **correlation map** in Python to ground dashboard stories.
 
-### 5.2. Analytical
+### 6.2. Analytical
 - **Segment-first** lens (seat & traveller types) exposes different pain points (e.g., Business vs Economy).
 - Read results with **sample-size awareness** (aircraft charts with N≈1 not actionable).
 
-### 5.3. Communication
+### 6.3. Communication
 - Translated metrics into **operational levers** (Wi-Fi/IFE upgrades, crew training, airport coordination).
 
 ---
 
-## 6. Limitations
+## 7. Limitations
 - Single-airline scope (no competitor benchmark).
 - Unobserved variables (fare paid, delay minutes, aircraft age/config).
 - Correlations ≠ causation; route length/season/class mix may confound results.
@@ -185,7 +324,7 @@ Analyzed **4,510 Spirit Airlines reviews (2015–2025)** using SQL + Python + Mo
 
 ---
 
-## 7. Next Steps
+## 8. Next Steps
 - **Benchmarking:** compare with peers (Frontier, JetBlue) by route/class.
 - **Text mining:** topic & sentiment on `REVIEW_TEXT` for root-cause patterns.
 - **Modeling:** multivariate regressions or trees to quantify drivers of `AVERAGE_RATING` and `RECOMMENDED`.
