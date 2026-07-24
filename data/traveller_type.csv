@@ -1,17 +1,17 @@
-"TYPE_OF_TRAVELLER","RATING_BAND","REVIEW_COUNT","PERCENT_SHARE","AVG_RATING_TRAVELLER"
-"Business","bad",341,83.37,2.73
-"Business","good",17,4.16,2.73
-"Business","medium",51,12.47,2.73
-"Couple Leisure","bad",932,81.47,2.75
-"Couple Leisure","good",89,7.78,2.75
-"Couple Leisure","medium",123,10.75,2.75
-"Family Leisure","bad",1166,81.08,2.76
-"Family Leisure","good",144,10.01,2.76
-"Family Leisure","medium",128,8.90,2.76
-"Solo Leisure","Unknown",1,0.07,2.77
-"Solo Leisure","bad",1185,79.80,2.77
-"Solo Leisure","good",123,8.28,2.77
-"Solo Leisure","medium",176,11.85,2.77
-,"bad",141,72.31,2.89
-,"good",8,4.10,2.89
-,"medium",46,23.59,2.89
+TYPE_OF_TRAVELLER,RATING_BAND,REVIEW_COUNT,PERCENT_SHARE,AVG_RATING_TRAVELLER
+Business,bad,341,83.37,1.46
+Business,good,17,4.16,1.46
+Business,medium,51,12.47,1.46
+Couple Leisure,bad,932,81.47,1.56
+Couple Leisure,good,89,7.78,1.56
+Couple Leisure,medium,123,10.75,1.56
+Family Leisure,bad,1166,81.08,1.61
+Family Leisure,good,144,10.01,1.61
+Family Leisure,medium,128,8.9,1.61
+Solo Leisure,Unknown,1,0.07,1.59
+Solo Leisure,bad,1185,79.8,1.59
+Solo Leisure,good,123,8.28,1.59
+Solo Leisure,medium,176,11.85,1.59
+Unknown,bad,141,72.31,1.77
+Unknown,good,8,4.1,1.77
+Unknown,medium,46,23.59,1.77

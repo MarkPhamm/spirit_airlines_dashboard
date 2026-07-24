@@ -7,15 +7,16 @@
 Spirit Airlines reviews (2015–2025) show chronic dissatisfaction — avg rating **1.59/5**, nearly **88% not recommending**, with Wi-Fi & inflight entertainment as the weakest services and Business Class the most dissatisfied segment.
 
 ## Summary
-Analyzed **4,510 Spirit Airlines reviews (2015–2025)** using SQL + Python + Mode Analytics to uncover satisfaction drivers. Findings show **chronic dissatisfaction** (avg rating **1.59/5**, **87.86%** not recommending). Weakest areas are **Wi-Fi & Connectivity (1.13)** and **Inflight Entertainment (1.11)**; relatively stronger but still low is **Cabin Staff Service (1.95)**. Segment deep-dives (seat type, traveller type) highlight **Business Class** as the lowest-rated group.
+Analyzed **4,671 Spirit Airlines reviews (2015–2025)** using SQL + Python + Mode Analytics to uncover satisfaction drivers. Findings show **chronic dissatisfaction** (avg rating **1.59/5**, **87.86%** not recommending). Weakest areas are **Wi-Fi & Connectivity (1.13)** and **Inflight Entertainment (1.11)**; relatively stronger but still low is **Cabin Staff Service (1.95)**. Segment deep-dives (seat type, traveller type) highlight **Business Class** as the lowest-rated group.
 
-**Access the dashboard PDF:**  
-[Spirit Airlines Customer Satisfaction Dashboard](dashboard/Mia_Tran_Spirit_Airlines_Dashboard_20250929.pdf)
+**Dashboard access:**
+- **PDF export:** [Spirit Airlines Customer Satisfaction Dashboard](dashboard/Mia_Tran_Spirit_Airlines_Dashboard_20250929.pdf)
+- **Live Mode report:** ask the dashboard owner (Mia Tran) for the current Mode workspace link — Mode collections are workspace-private and are not published as a stable public URL from this repo.
 
 ---
 
 ## 1. Overview
-- **Scope:** 4,510 Skytrax reviews filtered to **Spirit Airlines** (2015–2025).
+- **Scope:** 4,671 Skytrax reviews filtered to **Spirit Airlines** (2015–2025).
 - **Goal:** Identify key drivers of customer satisfaction and convert them into targeted improvement actions.
 - **Method:**
   - **SQL** (warehouse/CSV) for extraction & prep
@@ -89,7 +90,7 @@ AirlineQuality.com → Airflow scrape → S3 raw/ + processed/ (quality gate)
 
 ### 4.1. Overall Customer Satisfaction
 
-- **Total Reviews:** **4,510**  
+- **Total Reviews:** **4,671**  
 - **Average Rating:** **1.59**  
 - **Rating Bands:** **80.60% bad**, **8.16% good**, **11.22% medium**, **0.02% unknown**  
 - **Recommendation:** **87.86% false**, **12.14% true**  

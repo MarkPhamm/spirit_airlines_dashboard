@@ -1,13 +1,16 @@
-"SEAT_TYPE","RATING_BAND","REVIEW_COUNT","PERCENT_SHARE","AVG_RATING_SEAT","SPIRIT_OVERALL_AVG"
-"Business Class","bad",13,81.25,1.286,1.59
-"Business Class","medium",3,18.75,1.286,1.59
-"Economy Class","Unknown",1,0.02,1.577,1.59
-"Economy Class","bad",3539,81.04,1.577,1.59
-"Economy Class","good",365,8.36,1.577,1.59
-"Economy Class","medium",462,10.58,1.577,1.59
-"First Class","bad",7,63.64,2.103,1.59
-"First Class","good",3,27.27,2.103,1.59
-"First Class","medium",1,9.09,2.103,1.59
-"Premium Economy","bad",75,80.65,1.564,1.59
-"Premium Economy","good",5,5.38,1.564,1.59
-"Premium Economy","medium",13,13.98,1.564,1.59
+SEAT_TYPE,RATING_BAND,REVIEW_COUNT,PERCENT_SHARE,AVG_RATING_SEAT,SPIRIT_OVERALL_AVG
+Business Class,bad,13,81.25,1.286,1.59
+Business Class,medium,3,18.75,1.286,1.59
+Economy Class,Unknown,1,0.02,1.577,1.59
+Economy Class,bad,3539,81.04,1.577,1.59
+Economy Class,good,365,8.36,1.577,1.59
+Economy Class,medium,462,10.58,1.577,1.59
+First Class,bad,7,63.64,2.103,1.59
+First Class,good,3,27.27,2.103,1.59
+First Class,medium,1,9.09,2.103,1.59
+Premium Economy,bad,75,80.65,1.564,1.59
+Premium Economy,good,5,5.38,1.564,1.59
+Premium Economy,medium,13,13.98,1.564,1.59
+Unknown,bad,131,71.2,1.783,1.59
+Unknown,good,8,4.35,1.783,1.59
+Unknown,medium,45,24.46,1.783,1.59
