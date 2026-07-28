@@ -1,14 +1,16 @@
 WITH base AS (
   SELECT
-    DATE_TRUNC('year', DATE_SUBMITTED_ID) AS review_year,
-    CABIN_STAFF_SERVICE,
-    FOOD_AND_BEVERAGES,
-    GROUND_SERVICE,
-    INFLIGHT_ENTERTAINMENT,
-    WIFI_AND_CONNECTIVITY
-  FROM SKYTRAX_REVIEWS_DB.MARTS.FCT_REVIEW_ENRICHED
-  WHERE AIRLINE = 'Spirit Airlines'
-    AND DATE_SUBMITTED_ID IS NOT NULL
+    DATE_TRUNC('year', f.date_submitted_id) AS review_year,
+    f.cabin_staff_service,
+    f.food_and_beverages,
+    f.ground_service,
+    f.inflight_entertainment,
+    f.wifi_and_connectivity
+  FROM SKYTRAX_REVIEWS_DB.MARTS.FCT_REVIEW f
+  JOIN SKYTRAX_REVIEWS_DB.MARTS.DIM_AIRLINE a
+    ON f.airline_id = a.airline_id
+  WHERE a.airline_name = 'spirit airlines'
+    AND f.date_submitted_id IS NOT NULL
 )
 SELECT
   review_year,
@@ -18,11 +20,11 @@ SELECT
 FROM base
 UNPIVOT (
   rating_value FOR rating_type IN (
-    CABIN_STAFF_SERVICE,
-    FOOD_AND_BEVERAGES,
-    GROUND_SERVICE,
-    INFLIGHT_ENTERTAINMENT,
-    WIFI_AND_CONNECTIVITY
+    cabin_staff_service,
+    food_and_beverages,
+    ground_service,
+    inflight_entertainment,
+    wifi_and_connectivity
   )
 ) u
 GROUP BY review_year, rating_type

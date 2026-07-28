@@ -1,12 +1,14 @@
-SELECT 
-    d.AIRCRAFT_MODEL,
-    d.AIRCRAFT_MANUFACTURER,
-    d.SEAT_CAPACITY,
-    AVG(f.AVERAGE_RATING) AS avg_rating,
-    COUNT(*) AS review_count
-FROM SKYTRAX_REVIEWS_DB.MARTS.FCT_REVIEW_ENRICHED f
+SELECT
+  d.aircraft_model,
+  d.aircraft_manufacturer,
+  d.seat_capacity,
+  AVG(f.average_rating) AS avg_rating,
+  COUNT(*) AS review_count
+FROM SKYTRAX_REVIEWS_DB.MARTS.FCT_REVIEW f
+JOIN SKYTRAX_REVIEWS_DB.MARTS.DIM_AIRLINE a
+  ON f.airline_id = a.airline_id
 JOIN SKYTRAX_REVIEWS_DB.MARTS.DIM_AIRCRAFT d
-    ON f.AIRCRAFT_ID = d.AIRCRAFT_ID
-WHERE f.AIRLINE = 'Spirit Airlines'
-GROUP BY d.AIRCRAFT_MODEL, d.AIRCRAFT_MANUFACTURER, d.SEAT_CAPACITY
+  ON f.aircraft_id = d.aircraft_id
+WHERE a.airline_name = 'spirit airlines'
+GROUP BY d.aircraft_model, d.aircraft_manufacturer, d.seat_capacity
 ORDER BY review_count DESC;
