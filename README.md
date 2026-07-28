@@ -35,12 +35,12 @@ This dashboard is the **insight layer** of the Skytrax Reviews Analytics Platfor
 
 | Stage | Repository | What it does |
 | --- | --- | --- |
-| Extract & Load | [skytrax_reviews_extract_load](https://github.com/MarkPhamm/skytrax_reviews_extract_load) | Airflow-orchestrated scrape of AirlineQuality.com (4 review types) → S3 `raw/` + `processed/` → post-upload quality gate → Snowflake `COPY INTO` RAW with `LOAD_AUDIT` reconciliation. Terraform-managed S3, IAM, and Snowflake RAW. |
+| Extract & Load | [skytrax_reviews_extract_load](https://github.com/MarkPhamm/skytrax_reviews_extract_load) | Airflow-orchestrated scrape of AirlineQuality.com (4 review types; **site permanently closed** — historical archive) → S3 `raw/` + `processed/` → post-upload quality gate → Snowflake `COPY INTO` RAW with `LOAD_AUDIT` reconciliation. Terraform-managed S3, IAM, and Snowflake RAW. |
 | Transform & DataOps | [skytrax_reviews_transformation](https://github.com/MarkPhamm/skytrax_reviews_transformation) | dbt Core Kimball star schema (staging → intermediate → marts), incremental `fct_review` (merge + lookback watermark), tests/contracts/snapshots, slim CI + defer/favor-state CD, Terraform RBAC + PII masking, hosted dbt docs. |
 | Umbrella / narrative | [skytrax_reviews](https://github.com/MarkPhamm/skytrax_reviews) | Cross-repo architecture, platform walkthrough deck, and project docs. |
 
 ```text
-AirlineQuality.com → Airflow scrape → S3 raw/ + processed/ (quality gate)
+AirlineQuality.com (closed) → Airflow scrape → S3 raw/ + processed/ (quality gate)
                    → COPY INTO Snowflake RAW (+ LOAD_AUDIT reconciliation)
                    → dbt: SOURCE → INTERMEDIATE → MARTS (Kimball star schema)
                    → Mode (this dashboard) queries MARTS via a read-only role
