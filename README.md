@@ -4,10 +4,10 @@
 </p>
 
 ## TL;DR
-Spirit Airlines reviews (2015–2025) show chronic dissatisfaction — avg rating **1.59/5**, nearly **88% not recommending**, with Wi-Fi & inflight entertainment as the weakest services and Business Class the most dissatisfied segment.
+Spirit Airlines reviews (2015–2025) show chronic dissatisfaction — avg rating **1.59/5**, **12.1% recommending** (~**87.9%** not recommending), with Wi-Fi & inflight entertainment as the weakest services and Business Class the most dissatisfied segment.
 
 ## Summary
-Analyzed **4,671 Spirit Airlines reviews (2015–2025)** using SQL + Python + Mode Analytics to uncover satisfaction drivers. Findings show **chronic dissatisfaction** (avg rating **1.59/5**, **87.86%** not recommending). Weakest areas are **Wi-Fi & Connectivity (1.13)** and **Inflight Entertainment (1.11)**; relatively stronger but still low is **Cabin Staff Service (1.95)**. Segment deep-dives (seat type, traveller type) highlight **Business Class** as the lowest-rated group.
+Analyzed **4,698 Spirit Airlines reviews** (platform KPI snapshot 2026-07-30; Mode PDF may show a slightly older cut) using SQL + Python + Mode Analytics to uncover satisfaction drivers. Findings show **chronic dissatisfaction** (avg rating **1.59/5**, **12.1%** recommending / ~**87.9%** not recommending). Weakest areas are **Wi-Fi & Connectivity (~1.13)** and **Inflight Entertainment (~1.11)**; relatively stronger but still low is **Cabin Staff Service (~1.95)**. Segment deep-dives (seat type, traveller type) highlight **Business Class** as the lowest-rated group.
 
 **Dashboard access:**
 - **PDF export:** [Spirit Airlines Customer Satisfaction Dashboard](dashboard/Mia_Tran_Spirit_Airlines_Dashboard_20250929.pdf)
@@ -16,14 +16,14 @@ Analyzed **4,671 Spirit Airlines reviews (2015–2025)** using SQL + Python + Mo
 ---
 
 ## 1. Overview
-- **Scope:** 4,671 Skytrax reviews filtered to **Spirit Airlines** (2015–2025).
+- **Scope:** 4,698 Skytrax reviews filtered to **Spirit Airlines** (platform snapshot 2026-07-30).
 - **Goal:** Identify key drivers of customer satisfaction and convert them into targeted improvement actions.
 - **Method:**
   - **SQL** (warehouse/CSV) for extraction & prep
   - **Python** (Pandas, Matplotlib) for validation and one analytical figure (correlation map)
   - **Mode Studio** for the **interactive dashboard** and most visuals
 - **Top Insights (high level):**
-  - **Weak overall sentiment:** `Average_Rating = 1.59/5`, **87.86%** of reviewers do **not** recommend.
+  - **Weak overall sentiment:** `Average_Rating = 1.59/5`, **~87.9%** of reviewers do **not** recommend (**12.1%** would recommend).
   - **Service gaps:** Wi-Fi & Inflight Entertainment near **1.1/5**; Cabin Staff ~**1.95** (still below acceptable).
   - **Segments:** **Business Class** and **Economy** show the largest concentration of “bad” ratings; Business has **0%** “good” ratings in this sample.
   - **Airports:** Some origins/destinations (e.g., **MIA**, **MEX**) repeatedly appear among the lowest-rated.
@@ -36,7 +36,7 @@ This dashboard is the **insight layer** of the Skytrax Reviews Analytics Platfor
 | Stage | Repository | What it does |
 | --- | --- | --- |
 | Extract & Load | [skytrax_reviews_extract_load](https://github.com/MarkPhamm/skytrax_reviews_extract_load) | Airflow-orchestrated scrape of AirlineQuality.com (4 review types; **site permanently closed** — historical archive) → S3 `raw/` + `processed/` → post-upload quality gate → Snowflake `COPY INTO` RAW with `LOAD_AUDIT` reconciliation. Terraform-managed S3, IAM, and Snowflake RAW. |
-| Transform & DataOps | [skytrax_reviews_transformation](https://github.com/MarkPhamm/skytrax_reviews_transformation) | dbt Core Kimball star schema (staging → intermediate → marts), incremental `fct_review` (merge + lookback watermark), tests/contracts/snapshots, slim CI + defer/favor-state CD, Terraform RBAC + PII masking, hosted dbt docs. |
+| Transform & DataOps | [skytrax_reviews_transformation](https://github.com/MarkPhamm/skytrax_reviews_transformation) | dbt Core Kimball star schema (staging → intermediate → marts), incremental `fct_review` (merge on `review_id` + pure `updated_at` HWM), tests/contracts/snapshots, slim CI + defer/favor-state CD, Terraform RBAC + PII masking, hosted dbt docs. |
 | Umbrella / narrative | [skytrax_reviews](https://github.com/MarkPhamm/skytrax_reviews) | Cross-repo architecture, platform walkthrough deck, and project docs. |
 
 ```text
@@ -48,7 +48,7 @@ AirlineQuality.com (closed) → Airflow scrape → S3 raw/ + processed/ (quality
 
 ### 2.1 What this dashboard consumes
 
-* **`MARTS.FCT_REVIEW_ENRICHED`** — the BI-facing view that denormalizes airline name onto the review-grain fact; every query in [`sql/`](sql/) filters `WHERE AIRLINE = 'Spirit Airlines'`.
+* **`MARTS.FCT_REVIEW`** — review-grain fact; every query in [`sql/`](sql/) joins `MARTS.DIM_AIRLINE` and filters `WHERE a.airline_name = 'spirit airlines'` (names lowercased in dbt).
 * **`MARTS.DIM_AIRCRAFT`** and **`MARTS.DIM_LOCATION`** — joined for aircraft analysis and role-playing origin/destination airport analysis (see [`sql/aircraft.sql`](sql/aircraft.sql) and [`sql/airport.sql`](sql/airport.sql)).
 * Metric logic (`AVERAGE_RATING`, `RATING_BAND`, `RECOMMENDED`) is computed **upstream in dbt**, not in the BI tool — the dashboard consumes governed columns and is declared as a dbt exposure in the transformation repo.
 * Upstream data quality: dbt `unique` / `not_null` / `relationships` / `accepted_values` + dbt_expectations range tests (ratings 1–5), source freshness checks, and EL-side file quality gates with load reconciliation.
@@ -90,10 +90,10 @@ AirlineQuality.com (closed) → Airflow scrape → S3 raw/ + processed/ (quality
 
 ### 4.1. Overall Customer Satisfaction
 
-- **Total Reviews:** **4,671**  
-- **Average Rating:** **1.59**  
-- **Rating Bands:** **80.60% bad**, **8.16% good**, **11.22% medium**, **0.02% unknown**  
-- **Recommendation:** **87.86% false**, **12.14% true**  
+- **Total Reviews:** **4,698** (platform snapshot 2026-07-30)
+- **Average Rating:** **1.59** (vs industry **2.59**)
+- **Rating Bands:** **80.60% bad**, **8.16% good**, **11.22% medium**, **0.02% unknown** (Mode chart cut; may lag row count by a few dozen)
+- **Recommendation:** **12.1%** would recommend / **~87.9%** would not (vs industry **40%**)
 - **Service Averages:** Cabin Staff **1.95**, Seat Comfort **1.57**, Food & Beverages **1.37**, Inflight Entertainment **1.11**, Wi-Fi & Connectivity **1.13**
 
 > Takeaway: Persistent dissatisfaction across the board; connectivity/entertainment are the clearest pain points.
